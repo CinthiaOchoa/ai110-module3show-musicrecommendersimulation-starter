@@ -1,111 +1,111 @@
 # 🎧 Model Card: Music Recommender Simulation
 
-## 1. Model Name  
+## 1. Model Name
 
-Give your model a short, descriptive name.  
-Example: **VibeFinder 1.0**  
-
----
-
-## 2. Intended Use  
-
-Describe what your recommender is designed to do and who it is for. 
-
-Prompts:  
-
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+**VibeFinder 1.0**
 
 ---
 
-## 3. How the Model Works  
+## 2. Intended Use
 
-Explain your scoring approach in simple language.  
-
-Prompts:  
-
-- What features of each song are used (genre, energy, mood, etc.)  
-- What user preferences are considered  
-- How does the model turn those into a score  
-- What changes did you make from the starter logic  
-
-Avoid code here. Pretend you are explaining the idea to a friend who does not program.
+VibeFinder is a classroom simulation, not a real product. It suggests songs from a
+small fixed catalog that match a listener's stated taste (a favorite genre, a favorite
+mood, and how energetic they want the music to be). It assumes the user can describe
+their taste up front and that the catalog is small enough to score in full. It is meant
+for learning how recommenders turn data into ranked predictions — not for real users or
+any decision that matters.
 
 ---
 
-## 4. Data  
+## 3. How the Model Works
 
-Describe the dataset the model uses.  
-
-Prompts:  
-
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
-
----
-
-## 5. Strengths  
-
-Where does your system seem to work well  
-
-Prompts:  
-
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
+Every song carries a few labels: its genre, its mood, and numbers between 0 and 1 for
+things like energy. The user says what they like. For each song the model adds up points:
+2 points if the genre matches, 1 point if the mood matches, and up to 2 more points
+depending on how close the song's energy is to what the user wants. A song whose energy is
+exactly right gets the full bonus, and the bonus shrinks the further off it is. Then it
+sorts all the songs by their total points and shows the top five, along with a short
+sentence explaining where the points came from. Compared to the starter code, I filled in
+the empty scoring and ranking functions, made energy reward *closeness* instead of just
+high numbers, and added the plain-English "reasons."
 
 ---
 
-## 6. Limitations and Bias 
+## 4. Data
 
-Where the system struggles or behaves unfairly. 
-
-Prompts:  
-
-- Features it does not consider  
-- Genres or moods that are underrepresented  
-- Cases where the system overfits to one preference  
-- Ways the scoring might unintentionally favor some users  
-
----
-
-## 7. Evaluation  
-
-How you checked whether the recommender behaved as expected. 
-
-Prompts:  
-
-- Which user profiles you tested  
-- What you looked for in the recommendations  
-- What surprised you  
-- Any simple tests or comparisons you ran  
-
-No need for numeric metrics unless you created some.
+The catalog has **18 songs**. Each song has: id, title, artist, genre, mood, energy,
+tempo_bpm, valence, danceability, and acousticness. I expanded the original 10 songs by
+adding 8 more to cover genres and moods the starter file was missing — punk, folk, edm,
+blues, world, hip hop, classical, and reggae, with moods like aggressive, nostalgic,
+euphoric, melancholy, peaceful, and dramatic. It is still tiny and English/Western-leaning,
+and it has no `sad` songs even though a user can ask for that mood, so parts of real
+musical taste are simply missing.
 
 ---
 
-## 8. Future Work  
+## 5. Strengths
 
-Ideas for how you would improve the model next.  
-
-Prompts:  
-
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
+- For clear, consistent profiles (e.g. "Chill Lofi") the top results are exactly the songs
+  a person would expect — the two lofi/chill tracks score highest.
+- The energy-closeness rule works well: it correctly separates "intense rock" from
+  "chill lofi" instead of always preferring the loudest song.
+- The reasons make every ranking transparent — you can always see why a song scored what
+  it did, which matched my intuition when I checked results by hand.
 
 ---
 
-## 9. Personal Reflection  
+## 6. Limitations and Bias
 
-A few sentences about your experience.  
+The biggest weakness is that **genre is weighted highest (+2.0)**, so the system leans
+toward the user's stated genre and can hide great cross-genre songs that match their mood —
+a classic filter bubble. It also ignores preferences it can't satisfy: the "Conflicted"
+profile asked for a `sad` mood, but since no song is tagged `sad`, that rule silently does
+nothing and ranking falls back to genre + energy. Features like valence, danceability, and
+acousticness are stored but not scored, so listeners who care about those get no benefit.
+Finally, with only 18 songs, popular genres crowd the top of many lists and there just
+isn't enough variety to serve unusual tastes.
 
-Prompts:  
+---
 
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps  
+## 7. Evaluation
+
+I tested four profiles: **High-Energy Pop**, **Chill Lofi**, **Deep Intense Rock**, and an
+adversarial **Conflicted** profile (sad mood but very high energy). I looked at whether the
+top 5 for each felt right and whether different profiles produced genuinely different lists.
+
+Profile comparisons:
+
+- **Chill Lofi vs. Deep Intense Rock:** completely different tops — Lofi surfaces
+  low-energy lofi/chill tracks (Library Rain, 5.00), while Rock surfaces high-energy
+  intense tracks (Storm Runner, 4.98). This makes sense: the energy-closeness rule pulls
+  each list toward opposite ends of the energy scale, exactly what those profiles test for.
+- **High-Energy Pop vs. Deep Intense Rock:** both want high energy, so they *share* songs
+  like Gym Hero and Storm Runner, but genre flips the winner — Pop puts Sunrise City first,
+  Rock puts Storm Runner first. This shows genre acting as the tie-breaker among similarly
+  energetic songs.
+- **Conflicted vs. the rest:** the surprise was that a "sad" request had no effect at all,
+  because the dataset has no sad songs, so the profile behaved like a plain edm/high-energy
+  request. That revealed the "silently ignored preference" limitation above.
+
+---
+
+## 8. Future Work
+
+- Score the unused numeric features (valence, danceability, acousticness) so more of a
+  user's taste actually counts.
+- Add a diversity penalty so the same artist/genre can't dominate the whole top-5.
+- Warn the user when a requested genre or mood doesn't exist in the catalog instead of
+  silently ignoring it, and grow the dataset so rarer tastes have real options.
+
+---
+
+## 9. Personal Reflection
+
+My biggest learning moment was realizing a recommender is just a scoring function plus a
+sort — once each song has a number, "recommending" is only ranking. AI tools were most
+helpful for brainstorming the energy-closeness formula and for suggesting adversarial
+profiles I wouldn't have thought of, but I had to double-check the math and the weights
+myself, and I caught the "no sad songs" gap by reading the actual output rather than
+trusting it. What surprised me most is how a handful of simple weighted rules can feel like
+the app "gets" you — and how the invisible choice of those weights is exactly where bias
+sneaks into real recommendation systems.
